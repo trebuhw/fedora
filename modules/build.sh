@@ -24,6 +24,7 @@ else
 fi
 
 # Załaduj środowisko cargo
+# shellcheck source=/dev/null
 source "$HOME/.cargo/env"
 
 # Weryfikacja

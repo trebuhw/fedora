@@ -9,7 +9,7 @@ Automatyzuje wszystko od świeżej instalacji Fedora Gnome do gotowego, skonfigu
 
 - Świeża instalacja **Fedora Workstation (Gnome)**
 - Dostęp do internetu
-- Konto użytkownika `hubert` z możliwością `sudo`
+- Konto użytkownika `$USER` z możliwością `sudo`
 
 ---
 
@@ -84,7 +84,7 @@ Instaluje komponenty środowiska DWM:
 
 ### `apps.sh`
 Instaluje programy użytkowe:
-`bat`, `btop`, `chromium`, `codium`, `eza`, `fastfetch`, `fish`,
+`bat`, `btop`, `chromium`, `codium`, `eza`, `fastfetch`, `fish`, `flameshot`,
 `ghostty`, `gparted`, `htop`, `i3lock`, `neovim`, `pamixer`, `papirus-icon-theme`,
 `pavucontrol`, `starship`, `stow`, `Thunar`, `thunderbird`, `trash-cli`,
 `ueberzugpp`, `yazi`, `zathura` i inne

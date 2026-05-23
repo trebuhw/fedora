@@ -5,6 +5,13 @@
 # =============================================================================
 set -euo pipefail
 
+# Użytkownik który uruchomił sudo (nie root)
+ACTUAL_USER="${SUDO_USER:-$USER}"
+[[ -z "$ACTUAL_USER" || "$ACTUAL_USER" == "root" ]] && {
+  echo "BŁĄD: nie można ustalić użytkownika — uruchom przez sudo, nie jako root bezpośrednio"
+  exit 1
+}
+
 # -----------------------------------------------------------------------------
 # Sudoers
 # -----------------------------------------------------------------------------
@@ -13,16 +20,16 @@ echo "Konfiguracja sudoers..."
 # Odkomentuj %wheel ALL=(ALL) ALL
 sed -i 's/^#\s*%wheel\s*ALL=(ALL)\s*ALL/%wheel  ALL=(ALL)       ALL/' /etc/sudoers
 
-# Dodaj hubert do grupy wheel
-usermod -aG wheel hubert
+# Dodaj użytkownika do grupy wheel
+usermod -aG wheel "$ACTUAL_USER"
 
-# Dodaj wpisy dla hubert przez visudo (bezpieczne — waliduje składnię)
+# Dodaj wpisy przez visudo (bezpieczne — waliduje składnię)
 SUDOERS_TMP=$(mktemp)
 cp /etc/sudoers "$SUDOERS_TMP"
 
-if ! grep -q "^hubert" "$SUDOERS_TMP"; then
-  echo "hubert  ALL=(ALL)       ALL" >>"$SUDOERS_TMP"
-  echo "hubert  ALL=(ALL)       NOPASSWD: ALL" >>"$SUDOERS_TMP"
+if ! grep -q "^$ACTUAL_USER" "$SUDOERS_TMP"; then
+  echo "$ACTUAL_USER  ALL=(ALL)       ALL" >>"$SUDOERS_TMP"
+  echo "$ACTUAL_USER  ALL=(ALL)       NOPASSWD: ALL" >>"$SUDOERS_TMP"
 fi
 
 # Waliduj przed nadpisaniem

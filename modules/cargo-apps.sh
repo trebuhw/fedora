@@ -12,6 +12,7 @@ if [[ ! -f "$CARGO_ENV" ]]; then
     exit 1
 fi
 
+# shellcheck source=/dev/null
 source "$CARGO_ENV"
 
 # Weryfikacja

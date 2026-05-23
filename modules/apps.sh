@@ -10,10 +10,12 @@ dnf install -y \
   btop \
   chromium \
   codium \
+  duf \
   eza \
   fastfetch \
   file-roller \
   fish \
+  fzf \
   ghostty \
   gnome-tweaks \
   gparted \
@@ -22,13 +24,12 @@ dnf install -y \
   i3lock \
   iwd \
   lm_sensors \
+  ncdu \
   neovim \
   network-manager-applet \
   nwg-look \
   onedrive \
   pamixer \
-  papirus-icon-theme \
-  parcellite \
   pavucontrol \
   scrot \
   speedtest-cli \

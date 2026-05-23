@@ -45,14 +45,14 @@ for tool in "${TOOLS[@]}"; do
 
     info "make..."
     if ! make; then
-        error "make failed dla ${tool}"
+        warn "make failed dla ${tool}"
         FAILED_TOOLS+=("${tool}")
         continue
     fi
 
     info "sudo make clean install..."
     if ! sudo make clean install; then
-        error "make install failed dla ${tool}"
+        warn "make install failed dla ${tool}"
         FAILED_TOOLS+=("${tool}")
         continue
     fi

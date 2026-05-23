@@ -22,8 +22,8 @@ command -v stow &>/dev/null || error "stow nie jest zainstalowany: sudo dnf inst
 # Zbierz pakiety
 mapfile -t ALL_PACKAGES < <(
     find "${DOTDIR}" -mindepth 1 -maxdepth 1 -type d \
-        ! -name '.git' \
-        | xargs -I{} basename {} \
+        ! -name '.git' -print0 \
+        | xargs -0 -I{} basename {} \
         | sort
 )
 
@@ -49,7 +49,7 @@ for pkg in "${STOW_PACKAGES[@]}"; do
     pkg_dir="${DOTDIR}/${pkg}"
 
     while IFS= read -r -d '' src_file; do
-        rel_path="${src_file#${pkg_dir}/}"
+        rel_path="${src_file#"${pkg_dir}"/}"
         target_path="${TARGET}/${rel_path}"
 
         if [[ -e "${target_path}" && ! -L "${target_path}" ]]; then
