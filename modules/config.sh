@@ -21,18 +21,18 @@ SUDOERS_TMP=$(mktemp)
 cp /etc/sudoers "$SUDOERS_TMP"
 
 if ! grep -q "^hubert" "$SUDOERS_TMP"; then
-    echo "hubert  ALL=(ALL)       ALL"          >> "$SUDOERS_TMP"
-    echo "hubert  ALL=(ALL)       NOPASSWD: ALL" >> "$SUDOERS_TMP"
+  echo "hubert  ALL=(ALL)       ALL" >>"$SUDOERS_TMP"
+  echo "hubert  ALL=(ALL)       NOPASSWD: ALL" >>"$SUDOERS_TMP"
 fi
 
 # Waliduj przed nadpisaniem
 if visudo -c -f "$SUDOERS_TMP"; then
-    cp "$SUDOERS_TMP" /etc/sudoers
-    echo "sudoers — OK"
+  cp "$SUDOERS_TMP" /etc/sudoers
+  echo "sudoers — OK"
 else
-    echo "BŁĄD: nieprawidłowa składnia sudoers — plik NIE został zmieniony"
-    rm -f "$SUDOERS_TMP"
-    exit 1
+  echo "BŁĄD: nieprawidłowa składnia sudoers — plik NIE został zmieniony"
+  rm -f "$SUDOERS_TMP"
+  exit 1
 fi
 rm -f "$SUDOERS_TMP"
 
@@ -42,17 +42,17 @@ rm -f "$SUDOERS_TMP"
 echo "Konfiguracja DNF..."
 
 # Dodaj tylko brakujące opcje (nie duplikuj przy ponownym uruchomieniu)
-grep -q "fastestmirror"        /etc/dnf/dnf.conf || echo "fastestmirror=True"        >> /etc/dnf/dnf.conf
-grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" >> /etc/dnf/dnf.conf
-grep -q "defaultyes"           /etc/dnf/dnf.conf || echo "defaultyes=True"           >> /etc/dnf/dnf.conf
-grep -q "keepcache"            /etc/dnf/dnf.conf || echo "keepcache=True"            >> /etc/dnf/dnf.conf
+grep -q "fastestmirror" /etc/dnf/dnf.conf || echo "fastestmirror=True" >>/etc/dnf/dnf.conf
+grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" >>/etc/dnf/dnf.conf
+grep -q "defaultyes" /etc/dnf/dnf.conf || echo "defaultyes=True" >>/etc/dnf/dnf.conf
+grep -q "keepcache" /etc/dnf/dnf.conf || echo "keepcache=True" >>/etc/dnf/dnf.conf
 
 # -----------------------------------------------------------------------------
 # Hostname
 # -----------------------------------------------------------------------------
 echo "Ustawiam hostname..."
 hostnamectl set-hostname fedora
-grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" >> /etc/hosts
+grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" >>/etc/hosts
 
 # -----------------------------------------------------------------------------
 # Xorg
@@ -60,7 +60,7 @@ grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" >> /etc/hosts
 echo "Kopiuję konfigurację Xorg..."
 mkdir -p /etc/X11/xorg.conf.d
 
-cat > /etc/X11/xorg.conf.d/00-keyboard.conf << 'XKBD'
+cat >/etc/X11/xorg.conf.d/00-keyboard.conf <<'XKBD'
 Section "InputClass"
         Identifier "system-keyboard"
         MatchIsKeyboard "on"
@@ -69,7 +69,7 @@ Section "InputClass"
 EndSection
 XKBD
 
-cat > /etc/X11/xorg.conf.d/20-intel.conf << 'XINTEL'
+cat >/etc/X11/xorg.conf.d/20-intel.conf <<'XINTEL'
 Section "Device"
     Identifier "Intel Graphics"
     Driver "modesetting"
@@ -77,7 +77,7 @@ Section "Device"
 EndSection
 XINTEL
 
-cat > /etc/X11/xorg.conf.d/90-touchpad.conf << 'XTOUCH'
+cat >/etc/X11/xorg.conf.d/90-touchpad.conf <<'XTOUCH'
 Section "InputClass"
     Identifier "touchpad"
     MatchIsTouchpad "on"
@@ -94,7 +94,7 @@ XTOUCH
 # -----------------------------------------------------------------------------
 echo "Instaluję dwm.desktop..."
 mkdir -p /usr/share/xsessions
-cat > /usr/share/xsessions/dwm.desktop << 'DWMDESKTOP'
+cat >/usr/share/xsessions/dwm.desktop <<'DWMDESKTOP'
 [Desktop Entry]
 Encoding=UTF-8
 Name=dwm
@@ -107,7 +107,7 @@ X-LightDM-DesktopName=dwm
 DWMDESKTOP
 
 echo "Instaluję start-dwm.sh..."
-cat > /usr/local/bin/start-dwm.sh << 'STARTDWM'
+cat >/usr/local/bin/start-dwm.sh <<'STARTDWM'
 #!/bin/sh
 slstatus &
 exec /usr/local/bin/dwm
