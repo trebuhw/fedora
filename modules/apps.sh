@@ -6,6 +6,7 @@ dnf install -y \
   btop \
   chromium \
   codium \
+  dunst \
   eza \
   fastfetch \
   file-roller \

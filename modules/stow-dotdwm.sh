@@ -2,8 +2,10 @@
 # =============================================================================
 # stow-dotdwm.sh
 #
-# Bezpieczne czyszczenie starej konfiguracji + linkowanie GNU Stow
-# (backup zamiast rm -rf)
+# Bezpieczny deploy dotfiles:
+# - jawna lista pakietów GNU Stow
+# - backup starej konfiguracji (.bak.TIMESTAMP)
+# - brak rm -rf na configach
 # =============================================================================
 
 set -Eeuo pipefail
@@ -18,11 +20,6 @@ USER_HOME="$(getent passwd "$ACTUAL_USER" | cut -d: -f6)"
 DOTDIR="${USER_HOME}/.dotdwm"
 TARGET="${USER_HOME}"
 
-SKIP_PACKAGES=(
-  "etc"
-  "usr"
-)
-
 # =============================================================================
 # COLORS / LOGGING
 # =============================================================================
@@ -33,13 +30,22 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-info() { echo -e "${GREEN}[INFO]${NC}  $*"; }
-warn() { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+info() {
+  echo -e "${GREEN}[INFO]${NC}  $*"
+}
+
+warn() {
+  echo -e "${YELLOW}[WARN]${NC}  $*"
+}
+
 error() {
   echo -e "${RED}[ERROR]${NC} $*"
   exit 1
 }
-step() { echo -e "${BLUE}[STEP]${NC}  $*"; }
+
+step() {
+  echo -e "${BLUE}[STEP]${NC}  $*"
+}
 
 # =============================================================================
 # ERROR HANDLER
@@ -67,44 +73,49 @@ info "HOME: ${USER_HOME}"
 info "DOTDIR: ${DOTDIR}"
 
 # =============================================================================
-# STOW PACKAGE DISCOVERY
+# STOW PACKAGES (MANUAL LIST)
 # =============================================================================
 
-step "Wyszukiwanie pakietów stow"
+step "Ładowanie listy pakietów stow"
 
-mapfile -t ALL_PACKAGES < <(
-  find "${DOTDIR}" \
-    -mindepth 1 \
-    -maxdepth 1 \
-    -type d \
-    ! -name '.git' \
-    -printf '%f\n' |
-    sort
+STOW_PACKAGES=(
+  "bash"
+  "bat"
+  "btop"
+  "dunst"
+  "fastfetch"
+  "fish"
+  "fonts"
+  "ghostty"
+  "icons"
+  "nvim"
+  "rofi"
+  "starship"
+  "suckless"
+  "sxiv"
+  "Thunar"
+  "xfce4"
+  "xorg"
+  "yazi"
+  "zathura"
 )
 
-STOW_PACKAGES=()
+VALID_PACKAGES=()
 
-for pkg in "${ALL_PACKAGES[@]}"; do
+for pkg in "${STOW_PACKAGES[@]}"; do
 
-  skip=false
-
-  for s in "${SKIP_PACKAGES[@]}"; do
-    if [[ "${pkg}" == "${s}" ]]; then
-      skip=true
-      break
-    fi
-  done
-
-  if $skip; then
-    warn "Pomijam pakiet: ${pkg}"
-  else
-    STOW_PACKAGES+=("${pkg}")
+  if [[ -d "${DOTDIR}/${pkg}" ]]; then
+    VALID_PACKAGES+=("${pkg}")
     info "Dodano pakiet: ${pkg}"
+  else
+    warn "Nie istnieje pakiet: ${pkg}"
   fi
 done
 
+STOW_PACKAGES=("${VALID_PACKAGES[@]}")
+
 [[ ${#STOW_PACKAGES[@]} -gt 0 ]] ||
-  error "Brak pakietów do stow"
+  error "Brak poprawnych pakietów do stow"
 
 # =============================================================================
 # BACKUP OLD CONFIG
@@ -113,28 +124,19 @@ done
 step "Tworzenie backupu starej konfiguracji"
 
 REMOVE_PATHS=(
-
-  # shell
   "${TARGET}/.bash_logout"
   "${TARGET}/.bash_profile"
   "${TARGET}/.bashrc"
-
-  # xorg
   "${TARGET}/.xinitrc"
   "${TARGET}/.Xresources"
-
-  # assets
   "${TARGET}/.fonts"
   "${TARGET}/.icons"
-
-  # config dirs
   "${TARGET}/.config/bash"
   "${TARGET}/.config/bat"
   "${TARGET}/.config/btop"
   "${TARGET}/.config/dunst"
   "${TARGET}/.config/fastfetch"
   "${TARGET}/.config/fish"
-  "${TARGET}/.config/geany"
   "${TARGET}/.config/ghostty"
   "${TARGET}/.config/nvim"
   "${TARGET}/.config/rofi"
@@ -144,8 +146,6 @@ REMOVE_PATHS=(
   "${TARGET}/.config/xfce4"
   "${TARGET}/.config/yazi"
   "${TARGET}/.config/zathura"
-
-  # files
   "${TARGET}/.config/starship.toml"
 )
 
@@ -170,7 +170,6 @@ for path in "${REMOVE_PATHS[@]}"; do
   else
 
     info "Nie istnieje: ${path}"
-
     ((SKIPPED_COUNT++))
   fi
 done
@@ -179,7 +178,7 @@ info "Zbackupowano: ${BACKED_UP_COUNT}"
 info "Pominięto: ${SKIPPED_COUNT}"
 
 # =============================================================================
-# STOW
+# GNU STOW
 # =============================================================================
 
 step "Linkowanie przez GNU Stow"
@@ -216,9 +215,14 @@ echo
 step "Podsumowanie"
 
 info "Zalinkowane pakiety:"
-for pkg in "${STOW_OK[@]}"; do
-  echo "  • ${pkg}"
-done
+
+if [[ ${#STOW_OK[@]} -gt 0 ]]; then
+  for pkg in "${STOW_OK[@]}"; do
+    echo "  • ${pkg}"
+  done
+else
+  warn "Brak poprawnie zalinkowanych pakietów"
+fi
 
 if [[ ${#STOW_FAIL[@]} -gt 0 ]]; then
   echo
