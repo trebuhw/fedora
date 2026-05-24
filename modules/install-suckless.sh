@@ -11,17 +11,23 @@ USER_HOME=$(getent passwd "$ACTUAL_USER" | cut -d: -f6)
 SUCKLESS_DIR="${USER_HOME}/.config/suckless"
 TOOLS=("dwm" "st" "slstatus" "dmenu")
 
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
-info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
-error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+info() { echo -e "${GREEN}[INFO]${NC}  $*"; }
+warn() { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+error() {
+  echo -e "${RED}[ERROR]${NC} $*"
+  exit 1
+}
 
 # Sprawdź czy katalog suckless istnieje (musi być po stow)
 [[ -d "${SUCKLESS_DIR}" ]] || error "${SUCKLESS_DIR} nie istnieje. Uruchom najpierw stow-dotdwm.sh"
 
 # Sprawdź narzędzia kompilacji
 command -v make &>/dev/null || error "make nie jest zainstalowany. Uruchom najpierw build.sh"
-command -v gcc  &>/dev/null || error "gcc nie jest zainstalowany. Uruchom najpierw build.sh"
+command -v gcc &>/dev/null || error "gcc nie jest zainstalowany. Uruchom najpierw build.sh"
 
 FAILED_TOOLS=()
 
@@ -59,7 +65,7 @@ for tool in "${TOOLS[@]}"; do
 
   # POPRAWKA: bez sudo — skrypt już działa jako root przez sudo bash install.sh
   info "make clean install..."
-  if ! sudo make clean install; then
+  if ! make clean install; then
     warn "make install failed dla ${tool}"
     FAILED_TOOLS+=("${tool}")
     continue
