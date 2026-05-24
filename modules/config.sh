@@ -17,13 +17,10 @@ ACTUAL_USER="${SUDO_USER:-$USER}"
 # -----------------------------------------------------------------------------
 echo "Konfiguracja sudoers..."
 
-# Odkomentuj %wheel ALL=(ALL) ALL
 sed -i 's/^#\s*%wheel\s*ALL=(ALL)\s*ALL/%wheel  ALL=(ALL)       ALL/' /etc/sudoers
 
-# Dodaj użytkownika do grupy wheel
 usermod -aG wheel "$ACTUAL_USER"
 
-# Dodaj wpisy przez visudo (bezpieczne — waliduje składnię)
 SUDOERS_TMP=$(mktemp)
 cp /etc/sudoers "$SUDOERS_TMP"
 
@@ -32,7 +29,6 @@ if ! grep -q "^$ACTUAL_USER" "$SUDOERS_TMP"; then
   echo "$ACTUAL_USER  ALL=(ALL)       NOPASSWD: ALL" >>"$SUDOERS_TMP"
 fi
 
-# Waliduj przed nadpisaniem
 if visudo -c -f "$SUDOERS_TMP"; then
   cp "$SUDOERS_TMP" /etc/sudoers
   echo "sudoers — OK"
@@ -48,7 +44,6 @@ rm -f "$SUDOERS_TMP"
 # -----------------------------------------------------------------------------
 echo "Konfiguracja DNF..."
 
-# Dodaj tylko brakujące opcje (nie duplikuj przy ponownym uruchomieniu)
 grep -q "fastestmirror" /etc/dnf/dnf.conf || echo "fastestmirror=True" >>/etc/dnf/dnf.conf
 grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" >>/etc/dnf/dnf.conf
 grep -q "defaultyes" /etc/dnf/dnf.conf || echo "defaultyes=True" >>/etc/dnf/dnf.conf
@@ -116,6 +111,12 @@ DWMDESKTOP
 echo "Instaluję start-dwm.sh..."
 cat >/usr/local/bin/start-dwm.sh <<'STARTDWM'
 #!/bin/sh
+# GDM przy sesjach Xorg nie sourcuje profilu użytkownika automatycznie.
+# Bez tego $PATH, $HOME i inne zmienne są niekompletne — ghostty i st
+# nie mogą znaleźć shella ani binarek z ~/.local/bin, ~/.cargo/bin itp.
+[ -f /etc/profile ] && . /etc/profile
+[ -f "$HOME/.profile" ] && . "$HOME/.profile"
+
 slstatus &
 exec /usr/local/bin/dwm
 STARTDWM

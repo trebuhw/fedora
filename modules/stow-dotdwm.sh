@@ -63,11 +63,12 @@ STOW_PACKAGES=(
 
 # =============================================================================
 # CLEAN OLD CONFIG
+# Uruchamiane jako root, ale operujemy na USER_HOME — używamy sudo -u
 # =============================================================================
 
 info "Usuwanie starej konfiguracji"
 
-rm -rf \
+sudo -u "${ACTUAL_USER}" rm -rf \
   "${TARGET}/.bash_logout" \
   "${TARGET}/.bash_profile" \
   "${TARGET}/.bashrc" \
@@ -75,6 +76,8 @@ rm -rf \
   "${TARGET}/.Xresources" \
   "${TARGET}/.fonts" \
   "${TARGET}/.icons" \
+  "${TARGET}/.themes" \
+  "${TARGET}/Obrazy" \
   "${TARGET}/.config/bash" \
   "${TARGET}/.config/bat" \
   "${TARGET}/.config/btop" \
@@ -93,20 +96,18 @@ rm -rf \
   "${TARGET}/.config/starship.toml"
 
 # =============================================================================
-# STOW
+# STOW — uruchamiany jako ACTUAL_USER, nie root
+# Symlinki muszą należeć do użytkownika, nie do roota
 # =============================================================================
 
-info "Linkowanie przez GNU Stow"
+info "Linkowanie przez GNU Stow (jako ${ACTUAL_USER})"
 
-cd "${DOTDIR}"
-
-for pkg in "${STOW_PACKAGES[@]}"; do
-  info "stow -> ${pkg}"
-
-  stow \
-    --target="${TARGET}" \
-    --restow \
-    "${pkg}"
-done
+sudo -u "${ACTUAL_USER}" bash -c "
+  cd '${DOTDIR}'
+  for pkg in ${STOW_PACKAGES[*]}; do
+    echo \"[INFO] stow -> \${pkg}\"
+    stow --target='${TARGET}' --restow \"\${pkg}\"
+  done
+"
 
 info "Gotowe"

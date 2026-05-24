@@ -4,7 +4,6 @@
 # =============================================================================
 set -euo pipefail
 
-# POPRAWKA: użyj katalogu domowego rzeczywistego użytkownika, nie /root
 ACTUAL_USER="${SUDO_USER:-$USER}"
 USER_HOME=$(getent passwd "$ACTUAL_USER" | cut -d: -f6)
 
@@ -22,10 +21,8 @@ error() {
   exit 1
 }
 
-# Sprawdź czy katalog suckless istnieje (musi być po stow)
 [[ -d "${SUCKLESS_DIR}" ]] || error "${SUCKLESS_DIR} nie istnieje. Uruchom najpierw stow-dotdwm.sh"
 
-# Sprawdź narzędzia kompilacji
 command -v make &>/dev/null || error "make nie jest zainstalowany. Uruchom najpierw build.sh"
 command -v gcc &>/dev/null || error "gcc nie jest zainstalowany. Uruchom najpierw build.sh"
 
@@ -51,25 +48,30 @@ for tool in "${TOOLS[@]}"; do
   cd "${tool_dir}"
 
   # Usuń config.h — make wygeneruje go z config.def.h
-  if [[ -f "config.h" ]]; then
+  # Usuń też jeśli jest symlinkiem (po stow)
+  if [[ -f "config.h" || -L "config.h" ]]; then
     info "Usuwam config.h"
     rm -f config.h
   fi
 
-  info "make..."
-  if ! make; then
+  # Kompilacja jako ACTUAL_USER — pliki .o i binarka należą do usera, nie roota
+  info "make (jako ${ACTUAL_USER})..."
+  if ! sudo -u "${ACTUAL_USER}" make; then
     warn "make failed dla ${tool}"
     FAILED_TOOLS+=("${tool}")
     continue
   fi
 
-  # POPRAWKA: bez sudo — skrypt już działa jako root przez sudo bash install.sh
-  info "make clean install..."
-  if ! make clean install; then
+  # make install wymaga roota (kopiuje do /usr/local/bin)
+  info "make install (jako root)..."
+  if ! make install; then
     warn "make install failed dla ${tool}"
     FAILED_TOOLS+=("${tool}")
     continue
   fi
+
+  # Po instalacji przywróć własność plików w katalogu usera
+  chown -R "${ACTUAL_USER}:${ACTUAL_USER}" "${tool_dir}"
 
   info "✓ ${tool} zainstalowany"
 done
