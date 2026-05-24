@@ -63,7 +63,7 @@ STOW_PACKAGES=(
 
 # =============================================================================
 # CLEAN OLD CONFIG
-# Uruchamiane jako root, ale operujemy na USER_HOME — używamy sudo -u
+# Uruchamiamy jako ACTUAL_USER — pliki w USER_HOME muszą należeć do usera
 # =============================================================================
 
 info "Usuwanie starej konfiguracji"
@@ -96,18 +96,20 @@ sudo -u "${ACTUAL_USER}" rm -rf \
   "${TARGET}/.config/starship.toml"
 
 # =============================================================================
-# STOW — uruchamiany jako ACTUAL_USER, nie root
+# STOW — każde wywołanie stow przez sudo -u, pętla w bieżącym shellu (root)
+# Nie można przekazać tablicy bash przez sudo -u bash -c (sudo używa /bin/sh)
 # Symlinki muszą należeć do użytkownika, nie do roota
 # =============================================================================
 
 info "Linkowanie przez GNU Stow (jako ${ACTUAL_USER})"
 
-sudo -u "${ACTUAL_USER}" bash -c "
-  cd '${DOTDIR}'
-  for pkg in ${STOW_PACKAGES[*]}; do
-    echo \"[INFO] stow -> \${pkg}\"
-    stow --target='${TARGET}' --restow \"\${pkg}\"
-  done
-"
+for pkg in "${STOW_PACKAGES[@]}"; do
+  info "stow -> ${pkg}"
+  sudo -u "${ACTUAL_USER}" stow \
+    --dir="${DOTDIR}" \
+    --target="${TARGET}" \
+    --restow \
+    "${pkg}"
+done
 
 info "Gotowe"
