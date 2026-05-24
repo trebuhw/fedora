@@ -51,9 +51,12 @@ STOW_PACKAGES=(
   "starship"
   "suckless"
   "sxiv"
+  "themes"
   "Thunar"
+  "wallpaper"
   "xfce4"
-  "xorg"
+  "xinitrc"
+  "Xresources"
   "yazi"
   "zathura"
 )
