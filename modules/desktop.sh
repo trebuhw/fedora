@@ -5,9 +5,9 @@
 set -euo pipefail
 
 dnf install -y \
-    rofi \
-    dunst \
-    picom \
-    feh \
-    numlockx \
-    brightnessctl
+  rofi \
+  dunst \
+  picom \
+  feh \
+  numlockx \
+  brightnessctl

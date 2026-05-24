@@ -4,29 +4,33 @@
 # =============================================================================
 set -euo pipefail
 
-# Narzędzia developerskie i biblioteki do suckless
+ACTUAL_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(getent passwd "$ACTUAL_USER" | cut -d: -f6)
+
+# POPRAWKA: development-tools to grupa — musi iść przez dnf group install (DNF5)
+dnf group install -y "development-tools"
+
+# Biblioteki do suckless
 dnf install -y \
-    development-tools \
-    dbus-devel \
-    fontconfig-devel \
-    fuse-libs \
-    libX11-devel \
-    libXft-devel \
-    libXinerama-devel
+  dbus-devel \
+  fontconfig-devel \
+  fuse-libs \
+  libX11-devel \
+  libXft-devel \
+  libXinerama-devel
 
 # Rust + Cargo (oficjalny instalator)
-if command -v rustup &>/dev/null; then
-    echo "Rust już zainstalowany — aktualizuję..."
-    rustup update stable
+# POPRAWKA: wymuszamy bash (domyślny shell to fish, który nie ładuje cargo env)
+CARGO_ENV="$USER_HOME/.cargo/env"
+RUN_AS="runuser -l $ACTUAL_USER -s /bin/bash -c"
+
+if $RUN_AS 'command -v rustup &>/dev/null'; then
+  echo "Rust już zainstalowany — aktualizuję..."
+  $RUN_AS 'rustup update stable'
 else
-    echo "Instaluję Rust..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+  echo "Instaluję Rust..."
+  $RUN_AS 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path'
 fi
 
-# Załaduj środowisko cargo
-# shellcheck source=/dev/null
-source "$HOME/.cargo/env"
-
-# Weryfikacja
-rustc --version
-cargo --version
+# Weryfikacja z jawnym załadowaniem env
+$RUN_AS "source $CARGO_ENV && rustc --version && cargo --version"

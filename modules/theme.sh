@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # =============================================================================
 # theme.sh — GTK theme, ikony, czcionki, kursor
-# Uruchamiany jako zwykły użytkownik (nie root) po stow
 # =============================================================================
 set -euo pipefail
+
+# POPRAWKA: użyj katalogu domowego rzeczywistego użytkownika, nie /root
+ACTUAL_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(getent passwd "$ACTUAL_USER" | cut -d: -f6)
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
@@ -13,7 +16,7 @@ error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 # -----------------------------------------------------------------------------
 # GTK-3 settings.ini
 # -----------------------------------------------------------------------------
-GTK3_DIR="$HOME/.config/gtk-3.0"
+GTK3_DIR="$USER_HOME/.config/gtk-3.0"
 GTK3_FILE="$GTK3_DIR/settings.ini"
 
 info "Ustawiam GTK-3 settings..."
@@ -42,9 +45,9 @@ GTK3
 info "GTK-3: $GTK3_FILE — OK"
 
 # -----------------------------------------------------------------------------
-# GTK-4 settings.ini (ta sama baza, bez legacy opcji)
+# GTK-4 settings.ini
 # -----------------------------------------------------------------------------
-GTK4_DIR="$HOME/.config/gtk-4.0"
+GTK4_DIR="$USER_HOME/.config/gtk-4.0"
 GTK4_FILE="$GTK4_DIR/settings.ini"
 
 info "Ustawiam GTK-4 settings..."
@@ -63,46 +66,44 @@ GTK4
 info "GTK-4: $GTK4_FILE — OK"
 
 # -----------------------------------------------------------------------------
-# gsettings (GNOME schema — działa też w środowiskach nie-GNOME z dconf)
+# gsettings
 # -----------------------------------------------------------------------------
 if command -v gsettings &>/dev/null; then
-    info "Ustawiam gsettings..."
-
-    gsettings set org.gnome.desktop.interface gtk-theme        'catppuccin-mocha-blue-standard+default'
-    gsettings set org.gnome.desktop.interface icon-theme       'Colloid-Grey-Dracula-Dark'
-    gsettings set org.gnome.desktop.interface font-name        'Adwaita Sans 11'
-    gsettings set org.gnome.desktop.interface cursor-theme     'Yaru'
-    gsettings set org.gnome.desktop.interface cursor-size      24
-    gsettings set org.gnome.desktop.interface color-scheme     'prefer-dark'
-
-    info "gsettings — OK"
+  info "Ustawiam gsettings..."
+  gsettings set org.gnome.desktop.interface gtk-theme    'catppuccin-mocha-blue-standard+default'
+  gsettings set org.gnome.desktop.interface icon-theme   'Colloid-Grey-Dracula-Dark'
+  gsettings set org.gnome.desktop.interface font-name    'Adwaita Sans 11'
+  gsettings set org.gnome.desktop.interface cursor-theme 'Yaru'
+  gsettings set org.gnome.desktop.interface cursor-size  24
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  info "gsettings — OK"
 else
-    warn "gsettings niedostępne — pomijam (ustawienia w settings.ini wystarczą dla DWM)"
+  warn "gsettings niedostępne — pomijam (ustawienia w settings.ini wystarczą dla DWM)"
 fi
 
 # -----------------------------------------------------------------------------
 # Xresources — cursor size dla Xorg
 # -----------------------------------------------------------------------------
-XRESOURCES="$HOME/.Xresources"
+XRESOURCES="$USER_HOME/.Xresources"
 if [[ -f "$XRESOURCES" ]]; then
-    if ! grep -q "Xcursor.size" "$XRESOURCES"; then
-        echo "Xcursor.size: 24"     >> "$XRESOURCES"
-        echo "Xcursor.theme: Yaru"  >> "$XRESOURCES"
-        info "Xresources — dodano cursor — OK"
-    else
-        info "Xresources — cursor już skonfigurowany — pomijam"
-    fi
+  if ! grep -q "Xcursor.size" "$XRESOURCES"; then
+    echo "Xcursor.size: 24"    >> "$XRESOURCES"
+    echo "Xcursor.theme: Yaru" >> "$XRESOURCES"
+    info "Xresources — dodano cursor — OK"
+  else
+    info "Xresources — cursor już skonfigurowany — pomijam"
+  fi
 else
-    warn "Brak $XRESOURCES — pomijam (stow jeszcze nie uruchomiony?)"
+  warn "Brak $XRESOURCES — pomijam (stow jeszcze nie uruchomiony?)"
 fi
 
 # -----------------------------------------------------------------------------
 # Odśwież cache czcionek
 # -----------------------------------------------------------------------------
 if command -v fc-cache &>/dev/null; then
-    info "Odświeżam cache czcionek..."
-    fc-cache -fv &>/dev/null
-    info "fc-cache — OK"
+  info "Odświeżam cache czcionek..."
+  fc-cache -fv &>/dev/null
+  info "fc-cache — OK"
 fi
 
 info "=== theme.sh zakończony ==="
