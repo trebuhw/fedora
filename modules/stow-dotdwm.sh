@@ -3,6 +3,7 @@
 # stow-dotdwm.sh
 #
 # Bezpieczne czyszczenie starej konfiguracji + linkowanie GNU Stow
+# (backup zamiast rm -rf)
 # =============================================================================
 
 set -Eeuo pipefail
@@ -106,10 +107,10 @@ done
   error "Brak pakietów do stow"
 
 # =============================================================================
-# CLEANUP
+# BACKUP OLD CONFIG
 # =============================================================================
 
-step "Usuwanie starej konfiguracji"
+step "Tworzenie backupu starej konfiguracji"
 
 REMOVE_PATHS=(
 
@@ -148,29 +149,33 @@ REMOVE_PATHS=(
   "${TARGET}/.config/starship.toml"
 )
 
-REMOVED_COUNT=0
+BACKUP_SUFFIX=".bak.$(date +%Y%m%d-%H%M%S)"
+
+BACKED_UP_COUNT=0
 SKIPPED_COUNT=0
 
 for path in "${REMOVE_PATHS[@]}"; do
 
   if [[ -e "${path}" || -L "${path}" ]]; then
 
-    warn "Usuwam: ${path}"
+    backup_path="${path}${BACKUP_SUFFIX}"
 
-    rm -rf "${path}"
+    warn "Backup: ${path}"
+    info " -> ${backup_path}"
 
-    ((REMOVED_COUNT++))
+    mv "${path}" "${backup_path}"
+
+    ((BACKED_UP_COUNT++))
 
   else
 
     info "Nie istnieje: ${path}"
 
     ((SKIPPED_COUNT++))
-
   fi
 done
 
-info "Usunięto: ${REMOVED_COUNT}"
+info "Zbackupowano: ${BACKED_UP_COUNT}"
 info "Pominięto: ${SKIPPED_COUNT}"
 
 # =============================================================================
@@ -192,9 +197,12 @@ for pkg in "${STOW_PACKAGES[@]}"; do
     --target="${TARGET}" \
     --restow \
     "${pkg}"; then
+
     STOW_OK+=("${pkg}")
     info "OK -> ${pkg}"
+
   else
+
     STOW_FAIL+=("${pkg}")
     warn "FAIL -> ${pkg}"
   fi
@@ -219,6 +227,10 @@ if [[ ${#STOW_FAIL[@]} -gt 0 ]]; then
     echo "  • ${pkg}"
   done
 fi
+
+echo
+info "Backupy zapisane jako:"
+echo "  *.bak.YYYYMMDD-HHMMSS"
 
 echo
 info "Sprawdzenie symlinków:"
