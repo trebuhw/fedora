@@ -15,7 +15,6 @@ dnf install -y \
   file-roller \
   fish \
   ghostty \
-  git \
   gthumb \
   htop \
   i3lock \
