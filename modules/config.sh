@@ -49,10 +49,10 @@ rm -f "$SUDOERS_TMP"
 echo "Konfiguracja DNF..."
 
 # Dodaj tylko brakujące opcje (nie duplikuj przy ponownym uruchomieniu)
-grep -q "fastestmirror" /etc/dnf/dnf.conf       || echo "fastestmirror=True"        >>/etc/dnf/dnf.conf
+grep -q "fastestmirror" /etc/dnf/dnf.conf || echo "fastestmirror=True" >>/etc/dnf/dnf.conf
 grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" >>/etc/dnf/dnf.conf
-grep -q "defaultyes" /etc/dnf/dnf.conf           || echo "defaultyes=True"           >>/etc/dnf/dnf.conf
-grep -q "keepcache" /etc/dnf/dnf.conf            || echo "keepcache=True"            >>/etc/dnf/dnf.conf
+grep -q "defaultyes" /etc/dnf/dnf.conf || echo "defaultyes=True" >>/etc/dnf/dnf.conf
+grep -q "keepcache" /etc/dnf/dnf.conf || echo "keepcache=True" >>/etc/dnf/dnf.conf
 
 # -----------------------------------------------------------------------------
 # Hostname

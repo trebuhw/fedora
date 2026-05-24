@@ -4,14 +4,11 @@ dnf install -y \
   bat \
   blueman \
   btop \
-  brightnessctl \
   chromium \
   codium \
   curl \
-  dunst \
   eza \
   fastfetch \
-  feh \
   file-roller \
   fish \
   ghostty \
@@ -24,7 +21,6 @@ dnf install -y \
   neovim \
   network-manager-applet \
   ncdu \
-  numlockx \
   nwg-look \
   onedrive \
   pamixer \
@@ -32,6 +28,7 @@ dnf install -y \
   scrot \
   speedtest-cli \
   starship \
+  stow \
   sxiv \
   Thunar \
   thunar-archive-plugin \
@@ -45,4 +42,5 @@ dnf install -y \
   vim-enhanced \
   yazi \
   zathura \
-  zathura-pdf-poppler
+  zathura-pdf-poppler \
+  zoxide
