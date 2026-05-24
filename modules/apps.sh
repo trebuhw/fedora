@@ -4,14 +4,18 @@ dnf install -y \
   bat \
   blueman \
   btop \
+  brightnessctl \
   chromium \
   codium \
+  curl \
   dunst \
   eza \
   fastfetch \
+  feh \
   file-roller \
   fish \
   ghostty \
+  git \
   gthumb \
   htop \
   i3lock \
@@ -20,6 +24,8 @@ dnf install -y \
   ncdu \
   neovim \
   network-manager-applet \
+  ncdu \
+  numlockx \
   nwg-look \
   onedrive \
   pamixer \
@@ -36,6 +42,7 @@ dnf install -y \
   trash-cli \
   tumbler \
   ueberzugpp \
+  wget \
   vim-enhanced \
   yazi \
   zathura \
