@@ -31,9 +31,12 @@ sudo dnf install -y \
   lame-devel \
   lame-libs
 
-# Terra repo
+# Terra — --repofrompath pozwala zainstalować terra-release bez wcześniej
+# skonfigurowanego repo (działa na świeżej instalacji)
 if rpm -q terra-release &>/dev/null; then
   echo "terra-release już zainstalowany — pomijam"
 else
-  sudo dnf install -y --repo=terra terra-release
+  sudo dnf install -y --nogpgcheck \
+    --repofrompath "terra,https://repos.fyralabs.com/terra$(rpm -E %fedora)" \
+    terra-release
 fi
