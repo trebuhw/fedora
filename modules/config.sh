@@ -9,36 +9,42 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 echo "Konfiguracja sudoers..."
 
-sudo sed -i 's/^#\s*%wheel\s*ALL=(ALL)\s*ALL/%wheel  ALL=(ALL)       ALL/' /etc/sudoers
-
 sudo usermod -aG wheel "$USER"
 
-SUDOERS_TMP=$(mktemp)
-sudo cp /etc/sudoers "$SUDOERS_TMP"
+# Operacje na /etc/sudoers w całości jako root przez heredoc
+# $USER i $CURRENT_USER są rozwijane przez shell usera zanim trafią do sudo
+CURRENT_USER="$USER"
+sudo bash -s << SUDOERS_EOF
+  set -e
+  sed -i 's/^#[[:space:]]*%wheel[[:space:]]*ALL=(ALL)[[:space:]]*ALL/%wheel  ALL=(ALL)       ALL/' /etc/sudoers
 
-if ! sudo grep -q "^$USER" "$SUDOERS_TMP"; then
-  echo "$USER  ALL=(ALL)       ALL" | sudo tee -a "$SUDOERS_TMP" > /dev/null
-  echo "$USER  ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a "$SUDOERS_TMP" > /dev/null
-fi
+  TMP=\$(mktemp /tmp/sudoers.XXXXXX)
+  cp /etc/sudoers "\$TMP"
 
-if sudo visudo -c -f "$SUDOERS_TMP"; then
-  sudo cp "$SUDOERS_TMP" /etc/sudoers
-  echo "sudoers — OK"
-else
-  echo "BŁĄD: nieprawidłowa składnia sudoers — plik NIE został zmieniony"
-  sudo rm -f "$SUDOERS_TMP"
-  exit 1
-fi
-sudo rm -f "$SUDOERS_TMP"
+  if ! grep -q "^${CURRENT_USER}" "\$TMP"; then
+    echo "${CURRENT_USER}  ALL=(ALL)       ALL"           >> "\$TMP"
+    echo "${CURRENT_USER}  ALL=(ALL)       NOPASSWD: ALL" >> "\$TMP"
+  fi
+
+  if visudo -c -f "\$TMP"; then
+    cp "\$TMP" /etc/sudoers
+    echo "sudoers — OK"
+  else
+    echo "BŁĄD: nieprawidłowa składnia sudoers — plik NIE został zmieniony"
+    rm -f "\$TMP"
+    exit 1
+  fi
+  rm -f "\$TMP"
+SUDOERS_EOF
 
 # -----------------------------------------------------------------------------
 # DNF
 # -----------------------------------------------------------------------------
 echo "Konfiguracja DNF..."
-sudo grep -q "fastestmirror"        /etc/dnf/dnf.conf || echo "fastestmirror=True"        | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo grep -q "fastestmirror"          /etc/dnf/dnf.conf || echo "fastestmirror=True"        | sudo tee -a /etc/dnf/dnf.conf > /dev/null
 sudo grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf > /dev/null
-sudo grep -q "defaultyes"           /etc/dnf/dnf.conf || echo "defaultyes=True"           | sudo tee -a /etc/dnf/dnf.conf > /dev/null
-sudo grep -q "keepcache"            /etc/dnf/dnf.conf || echo "keepcache=True"            | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo grep -q "defaultyes"             /etc/dnf/dnf.conf || echo "defaultyes=True"           | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo grep -q "keepcache"              /etc/dnf/dnf.conf || echo "keepcache=True"            | sudo tee -a /etc/dnf/dnf.conf > /dev/null
 
 # -----------------------------------------------------------------------------
 # Hostname
