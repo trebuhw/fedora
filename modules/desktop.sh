@@ -4,7 +4,7 @@
 # =============================================================================
 set -euo pipefail
 
-dnf install -y \
+sudo dnf install -y \
   rofi \
   dunst \
   picom \

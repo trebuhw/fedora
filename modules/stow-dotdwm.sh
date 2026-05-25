@@ -1,41 +1,26 @@
 #!/usr/bin/env bash
-
+# =============================================================================
+# stow-dotdwm.sh — Linkowanie dotfiles przez GNU Stow (uruchamiany jako user)
+# =============================================================================
 set -Eeuo pipefail
 
-ACTUAL_USER="${SUDO_USER:-$USER}"
-USER_HOME="$(getent passwd "$ACTUAL_USER" | cut -d: -f6)"
+DOTDIR="$HOME/.dotdwm"
+TARGET="$HOME"
 
-DOTDIR="${USER_HOME}/.dotdwm"
-TARGET="${USER_HOME}"
-
-info() {
-  echo "[INFO] $*"
-}
-
-error() {
-  echo "[ERROR] $*"
-  exit 1
-}
-
+info() { echo "[INFO] $*"; }
+error() { echo "[ERROR] $*"; exit 1; }
 trap 'error "Błąd w linii ${LINENO}"' ERR
 
 # =============================================================================
 # CHECKS
 # =============================================================================
-
-command -v stow >/dev/null 2>&1 ||
-  error "GNU Stow nie jest zainstalowany"
-
-[[ -d "${DOTDIR}" ]] ||
-  error "Nie istnieje katalog: ${DOTDIR}"
-
-[[ -d "${DOTDIR}/.git" ]] ||
-  error "${DOTDIR} nie wygląda jak repo git"
+command -v stow >/dev/null 2>&1 || error "GNU Stow nie jest zainstalowany"
+[[ -d "${DOTDIR}" ]]      || error "Nie istnieje katalog: ${DOTDIR}"
+[[ -d "${DOTDIR}/.git" ]] || error "${DOTDIR} nie wygląda jak repo git"
 
 # =============================================================================
 # STOW PACKAGES
 # =============================================================================
-
 STOW_PACKAGES=(
   "bash"
   "bat"
@@ -62,13 +47,11 @@ STOW_PACKAGES=(
 )
 
 # =============================================================================
-# CLEAN OLD CONFIG
-# Uruchamiamy jako ACTUAL_USER — pliki w USER_HOME muszą należeć do usera
+# CLEAN OLD CONFIG — bez sudo, jesteśmy userem
 # =============================================================================
-
 info "Usuwanie starej konfiguracji"
 
-sudo -u "${ACTUAL_USER}" rm -rf \
+rm -rf \
   "${TARGET}/.bash_logout" \
   "${TARGET}/.bash_profile" \
   "${TARGET}/.bashrc" \
@@ -96,16 +79,13 @@ sudo -u "${ACTUAL_USER}" rm -rf \
   "${TARGET}/.config/starship.toml"
 
 # =============================================================================
-# STOW — każde wywołanie stow przez sudo -u, pętla w bieżącym shellu (root)
-# Nie można przekazać tablicy bash przez sudo -u bash -c (sudo używa /bin/sh)
-# Symlinki muszą należeć do użytkownika, nie do roota
+# STOW — bez sudo, jesteśmy userem, symlinki będą należeć do usera
 # =============================================================================
-
-info "Linkowanie przez GNU Stow (jako ${ACTUAL_USER})"
+info "Linkowanie przez GNU Stow"
 
 for pkg in "${STOW_PACKAGES[@]}"; do
   info "stow -> ${pkg}"
-  sudo -u "${ACTUAL_USER}" stow \
+  stow \
     --dir="${DOTDIR}" \
     --target="${TARGET}" \
     --restow \

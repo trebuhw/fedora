@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
 # Fedora post-install — główny skrypt
-# Uruchom jako root: sudo bash install.sh
-# Tryb podglądu:     sudo bash install.sh --dry-run
+# Uruchom jako zwykły user: bash install.sh
+# Tryb podglądu:             bash install.sh --dry-run
 # =============================================================================
 
 set -euo pipefail
@@ -17,15 +17,24 @@ CYAN='\033[0;36m'
 GRAY='\033[0;90m'
 NC='\033[0m'
 
-info() { echo -e "${GREEN}[INFO]${NC}  $*" | tee -a "$LOG_FILE"; }
-warn() { echo -e "${YELLOW}[WARN]${NC}  $*" | tee -a "$LOG_FILE"; }
-error() { echo -e "${RED}[ERROR]${NC} $*" | tee -a "$LOG_FILE"; }
-dryrun() { echo -e "${GRAY}[DRY]${NC}   $*" | tee -a "$LOG_FILE"; }
+info()    { echo -e "${GREEN}[INFO]${NC}  $*" | tee -a "$LOG_FILE"; }
+warn()    { echo -e "${YELLOW}[WARN]${NC}  $*" | tee -a "$LOG_FILE"; }
+error()   { echo -e "${RED}[ERROR]${NC} $*" | tee -a "$LOG_FILE"; }
+dryrun()  { echo -e "${GRAY}[DRY]${NC}   $*" | tee -a "$LOG_FILE"; }
 section() {
   echo -e "\n${CYAN}══════════════════════════════════════${NC}" | tee -a "$LOG_FILE"
   echo -e "${CYAN}  $*${NC}" | tee -a "$LOG_FILE"
   echo -e "${CYAN}══════════════════════════════════════${NC}" | tee -a "$LOG_FILE"
 }
+
+# -----------------------------------------------------------------------------
+# NIE uruchamiaj jako root
+# -----------------------------------------------------------------------------
+if [[ $EUID -eq 0 ]]; then
+  echo -e "${RED}[ERROR]${NC} Nie uruchamiaj jako root. Uruchom: bash install.sh"
+  echo -e "${RED}[ERROR]${NC} Skrypt sam poprosi o hasło sudo gdy będzie potrzebne."
+  exit 1
+fi
 
 # -----------------------------------------------------------------------------
 # Tryb dry-run
@@ -36,25 +45,59 @@ for arg in "$@"; do
 done
 
 # -----------------------------------------------------------------------------
-# Sprawdź root
-# -----------------------------------------------------------------------------
-if [[ $EUID -ne 0 ]]; then
-  echo -e "${RED}[ERROR]${NC} Skrypt musi być uruchomiony jako root: sudo bash install.sh"
-  exit 1
-fi
-
-# -----------------------------------------------------------------------------
 # Katalogi i log
 # -----------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="/var/log/fedora-install"
+LOG_DIR="$HOME/.local/log/fedora-install"
 LOG_FILE="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S).log"
 mkdir -p "$LOG_DIR"
 
+# Eksportuj zmienne potrzebne modułom
+export ACTUAL_USER="$USER"
+export USER_HOME="$HOME"
+export SCRIPT_DIR
+export LOG_FILE
+export DRY_RUN
+
 # -----------------------------------------------------------------------------
-# Trap — sprzątanie przy Ctrl+C lub TERM
+# Jednorazowe sudo — poproś o hasło raz na początku, odświeżaj w tle
+# Wszystkie moduły które potrzebują roota wywołują: sudo <komenda>
 # -----------------------------------------------------------------------------
-trap 'echo ""; error "Przerwano przez użytkownika lub sygnał. Log: $LOG_FILE"; exit 130' INT TERM
+if ! $DRY_RUN; then
+  echo -e "${CYAN}Instalacja wymaga uprawnień administratora dla niektórych kroków.${NC}"
+  echo -e "${CYAN}Podaj hasło sudo raz — będzie ważne przez całą instalację.${NC}"
+  echo ""
+
+  # Sprawdź czy sudo w ogóle działa
+  if ! sudo -v; then
+    echo -e "${RED}[ERROR]${NC} Nie można uzyskać uprawnień sudo. Sprawdź czy użytkownik jest w grupie wheel."
+    exit 1
+  fi
+
+  # Odświeżaj token sudo co 50 sekund w tle (domyślny timeout to 5 min)
+  # żeby hasło nie wygasło w trakcie długiej instalacji
+  (
+    while true; do
+      sleep 50
+      sudo -n true 2>/dev/null || exit
+    done
+  ) &
+  SUDO_REFRESH_PID=$!
+
+  # Zatrzymaj odświeżanie przy wyjściu
+  trap '
+    kill "$SUDO_REFRESH_PID" 2>/dev/null || true
+    echo ""
+    error "Przerwano przez użytkownika lub sygnał. Log: $LOG_FILE"
+    exit 130
+  ' INT TERM
+else
+  trap '
+    echo ""
+    error "Przerwano. Log: $LOG_FILE"
+    exit 130
+  ' INT TERM
+fi
 
 # -----------------------------------------------------------------------------
 # Banner startowy
@@ -64,6 +107,7 @@ if $DRY_RUN; then
   echo -e "${YELLOW}  *** TRYB DRY-RUN — żadne zmiany nie zostaną wprowadzone ***${NC}" | tee -a "$LOG_FILE"
 fi
 info "Log: $LOG_FILE"
+info "Użytkownik: $ACTUAL_USER"
 info "SCRIPT_DIR: $SCRIPT_DIR"
 
 # -----------------------------------------------------------------------------
@@ -98,7 +142,6 @@ if $DRY_RUN; then
   for mod in "${MODULES[@]}"; do
     file="$SCRIPT_DIR/modules/${mod}.sh"
 
-    # Oznacz krytyczne
     is_critical=false
     for c in "${CRITICAL[@]}"; do
       [[ "$mod" == "$c" ]] && is_critical=true && break
@@ -107,7 +150,6 @@ if $DRY_RUN; then
 
     if [[ -f "$file" ]]; then
       dryrun "  ✓ modules/${mod}.sh${label}"
-      # Pokaż zawartość z prefiksem DRY
       echo -e "${GRAY}  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄${NC}" | tee -a "$LOG_FILE"
       while IFS= read -r line; do
         echo -e "${GRAY}  │ ${line}${NC}" | tee -a "$LOG_FILE"
@@ -120,7 +162,7 @@ if $DRY_RUN; then
   done
 
   echo -e "${YELLOW}Dry-run zakończony — żadne zmiany nie zostały wprowadzone.${NC}" | tee -a "$LOG_FILE"
-  echo -e "${YELLOW}Aby uruchomić instalację: sudo bash install.sh${NC}" | tee -a "$LOG_FILE"
+  echo -e "${YELLOW}Aby uruchomić instalację: bash install.sh${NC}" | tee -a "$LOG_FILE"
   exit 0
 fi
 
@@ -170,6 +212,9 @@ for mod in "${MODULES[@]}"; do
     fi
   fi
 done
+
+# Zatrzymaj odświeżanie sudo
+kill "$SUDO_REFRESH_PID" 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
 # Podsumowanie

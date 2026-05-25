@@ -1,6 +1,6 @@
 #!/bin/bash
 # Programy użytkowe
-dnf install -y \
+sudo dnf install -y \
   bat \
   blueman \
   btop \

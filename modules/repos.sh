@@ -1,43 +1,39 @@
 #!/usr/bin/env bash
-# =============================================================================
-# repos.sh — Dodatkowe repozytoria i kodeki
-# =============================================================================
 set -euo pipefail
 
-# RPM Fusion free + nonfree
-dnf install -y \
+# RPMFusion
+sudo dnf install -y \
   "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
   "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
 
-# RPM Fusion tainted (libdvdcss i firmware)
-dnf install -y \
+sudo dnf install -y \
   rpmfusion-free-release-tainted \
   rpmfusion-nonfree-release-tainted
 
-# Kodeki multimedialne
-dnf install -y \
-  gstreamer1-plugins-{bad-\*,good-\*,base} \
+sudo dnf install -y \
+  gstreamer1-plugins-bad-free \
+  gstreamer1-plugins-bad-free-extras \
+  gstreamer1-plugins-bad-free-fluidsynth \
+  gstreamer1-plugins-bad-free-libs \
+  gstreamer1-plugins-bad-free-lv2 \
+  gstreamer1-plugins-bad-free-opencv \
+  gstreamer1-plugins-bad-free-wildmidi \
+  gstreamer1-plugins-bad-free-zbar \
+  gstreamer1-plugins-bad-freeworld \
+  gstreamer1-plugins-good-extras \
+  gstreamer1-plugins-good-gtk \
+  gstreamer1-plugins-good-qt \
+  gstreamer1-plugins-good-qt6 \
+  gstreamer1-plugins-base \
   gstreamer1-plugin-openh264 \
-  gstreamer1-libav \
-  lame\* \
-  --exclude=gstreamer1-plugins-bad-free-devel
+  gstreamer1-plugin-libav \
+  lame \
+  lame-devel \
+  lame-libs
 
-# POPRAWKA: group install zamiast group upgrade --with-optional (DNF5)
-# Grupa "Multimedia" nie istnieje w Fedorze 44 — kodeki zainstalowane powyżej
-# dnf group install -y --with-optional Multimedia
-
-# Terra — idempotentne (pomija jeśli już zainstalowane)
-if ! rpm -q terra-release &>/dev/null; then
-  # shellcheck disable=SC2016
-  dnf install -y --nogpgcheck \
-    --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' \
-    terra-release
-else
+# Terra repo
+if rpm -q terra-release &>/dev/null; then
   echo "terra-release już zainstalowany — pomijam"
+else
+  sudo dnf install -y --repo=terra terra-release
 fi
-
-# Flathub
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# COPR: onedrive (odkomentuj jeśli potrzebne)
-# dnf copr enable -y jstaf/onedriver

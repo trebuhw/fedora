@@ -4,7 +4,7 @@
 # =============================================================================
 set -euo pipefail
 
-dnf install -y \
+sudo dnf install -y \
   xorg-x11-server-Xorg \
   xorg-x11-drv-intel \
   xrandr \

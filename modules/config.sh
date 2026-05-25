@@ -1,68 +1,59 @@
 #!/usr/bin/env bash
 # =============================================================================
-# config.sh — Konfiguracja systemu
-# Wymaga: root
+# config.sh — Konfiguracja systemu (wymaga sudo)
 # =============================================================================
 set -euo pipefail
-
-# Użytkownik który uruchomił sudo (nie root)
-ACTUAL_USER="${SUDO_USER:-$USER}"
-[[ -z "$ACTUAL_USER" || "$ACTUAL_USER" == "root" ]] && {
-  echo "BŁĄD: nie można ustalić użytkownika — uruchom przez sudo, nie jako root bezpośrednio"
-  exit 1
-}
 
 # -----------------------------------------------------------------------------
 # Sudoers
 # -----------------------------------------------------------------------------
 echo "Konfiguracja sudoers..."
 
-sed -i 's/^#\s*%wheel\s*ALL=(ALL)\s*ALL/%wheel  ALL=(ALL)       ALL/' /etc/sudoers
+sudo sed -i 's/^#\s*%wheel\s*ALL=(ALL)\s*ALL/%wheel  ALL=(ALL)       ALL/' /etc/sudoers
 
-usermod -aG wheel "$ACTUAL_USER"
+sudo usermod -aG wheel "$USER"
 
 SUDOERS_TMP=$(mktemp)
-cp /etc/sudoers "$SUDOERS_TMP"
+sudo cp /etc/sudoers "$SUDOERS_TMP"
 
-if ! grep -q "^$ACTUAL_USER" "$SUDOERS_TMP"; then
-  echo "$ACTUAL_USER  ALL=(ALL)       ALL" >>"$SUDOERS_TMP"
-  echo "$ACTUAL_USER  ALL=(ALL)       NOPASSWD: ALL" >>"$SUDOERS_TMP"
+if ! sudo grep -q "^$USER" "$SUDOERS_TMP"; then
+  echo "$USER  ALL=(ALL)       ALL" | sudo tee -a "$SUDOERS_TMP" > /dev/null
+  echo "$USER  ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a "$SUDOERS_TMP" > /dev/null
 fi
 
-if visudo -c -f "$SUDOERS_TMP"; then
-  cp "$SUDOERS_TMP" /etc/sudoers
+if sudo visudo -c -f "$SUDOERS_TMP"; then
+  sudo cp "$SUDOERS_TMP" /etc/sudoers
   echo "sudoers — OK"
 else
   echo "BŁĄD: nieprawidłowa składnia sudoers — plik NIE został zmieniony"
-  rm -f "$SUDOERS_TMP"
+  sudo rm -f "$SUDOERS_TMP"
   exit 1
 fi
-rm -f "$SUDOERS_TMP"
+sudo rm -f "$SUDOERS_TMP"
 
 # -----------------------------------------------------------------------------
 # DNF
 # -----------------------------------------------------------------------------
 echo "Konfiguracja DNF..."
-
-grep -q "fastestmirror" /etc/dnf/dnf.conf || echo "fastestmirror=True" >>/etc/dnf/dnf.conf
-grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" >>/etc/dnf/dnf.conf
-grep -q "defaultyes" /etc/dnf/dnf.conf || echo "defaultyes=True" >>/etc/dnf/dnf.conf
-grep -q "keepcache" /etc/dnf/dnf.conf || echo "keepcache=True" >>/etc/dnf/dnf.conf
+sudo grep -q "fastestmirror"        /etc/dnf/dnf.conf || echo "fastestmirror=True"        | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo grep -q "defaultyes"           /etc/dnf/dnf.conf || echo "defaultyes=True"           | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo grep -q "keepcache"            /etc/dnf/dnf.conf || echo "keepcache=True"            | sudo tee -a /etc/dnf/dnf.conf > /dev/null
 
 # -----------------------------------------------------------------------------
 # Hostname
 # -----------------------------------------------------------------------------
 echo "Ustawiam hostname..."
-hostnamectl set-hostname fedora
-grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" >>/etc/hosts
+sudo hostnamectl set-hostname fedora
+sudo grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" | sudo tee -a /etc/hosts > /dev/null
 
 # -----------------------------------------------------------------------------
 # Xorg
 # -----------------------------------------------------------------------------
 echo "Kopiuję konfigurację Xorg..."
-mkdir -p /etc/X11/xorg.conf.d
+sudo mkdir -p /etc/X11/xorg.conf.d
 
-cat >/etc/X11/xorg.conf.d/00-keyboard.conf <<'XKBD'
+sudo tee /etc/X11/xorg.conf.d/00-keyboard.conf > /dev/null << 'XKBD'
 Section "InputClass"
         Identifier "system-keyboard"
         MatchIsKeyboard "on"
@@ -71,7 +62,7 @@ Section "InputClass"
 EndSection
 XKBD
 
-cat >/etc/X11/xorg.conf.d/20-intel.conf <<'XINTEL'
+sudo tee /etc/X11/xorg.conf.d/20-intel.conf > /dev/null << 'XINTEL'
 Section "Device"
     Identifier "Intel Graphics"
     Driver "modesetting"
@@ -79,7 +70,7 @@ Section "Device"
 EndSection
 XINTEL
 
-cat >/etc/X11/xorg.conf.d/90-touchpad.conf <<'XTOUCH'
+sudo tee /etc/X11/xorg.conf.d/90-touchpad.conf > /dev/null << 'XTOUCH'
 Section "InputClass"
     Identifier "touchpad"
     MatchIsTouchpad "on"
@@ -95,8 +86,8 @@ XTOUCH
 # DWM — xsession + start wrapper
 # -----------------------------------------------------------------------------
 echo "Instaluję dwm.desktop..."
-mkdir -p /usr/share/xsessions
-cat >/usr/share/xsessions/dwm.desktop <<'DWMDESKTOP'
+sudo mkdir -p /usr/share/xsessions
+sudo tee /usr/share/xsessions/dwm.desktop > /dev/null << 'DWMDESKTOP'
 [Desktop Entry]
 Encoding=UTF-8
 Name=dwm
@@ -109,17 +100,17 @@ X-LightDM-DesktopName=dwm
 DWMDESKTOP
 
 echo "Instaluję start-dwm.sh..."
-cat >/usr/local/bin/start-dwm.sh <<'STARTDWM'
+sudo tee /usr/local/bin/start-dwm.sh > /dev/null << 'STARTDWM'
 #!/bin/sh
 # GDM przy sesjach Xorg nie sourcuje profilu użytkownika automatycznie.
-# Bez tego $PATH, $HOME i inne zmienne są niekompletne — ghostty i st
-# nie mogą znaleźć shella ani binarek z ~/.local/bin, ~/.cargo/bin itp.
+# Bez tego $PATH jest niekompletny — ghostty, st i inne binarki z
+# ~/.local/bin, ~/.cargo/bin nie są widoczne.
 [ -f /etc/profile ] && . /etc/profile
 [ -f "$HOME/.profile" ] && . "$HOME/.profile"
 
 slstatus &
 exec /usr/local/bin/dwm
 STARTDWM
-chmod +x /usr/local/bin/start-dwm.sh
+sudo chmod +x /usr/local/bin/start-dwm.sh
 
 echo "config.sh — zakończony"
