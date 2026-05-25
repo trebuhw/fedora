@@ -4,10 +4,16 @@
 # =============================================================================
 set -euo pipefail
 
-GREEN='\033[0;32m'; BLUE='\033[0;34m'; RED='\033[0;31m'; NC='\033[0m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
 info() { echo -e "${GREEN}[INFO]${NC}  $*"; }
 step() { echo -e "${BLUE}[STEP]${NC}  $*"; }
-error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
+error() {
+  echo -e "${RED}[ERROR]${NC} $*"
+  exit 1
+}
 
 DOTFILES_REPO="https://github.com/trebuhw/.dotdwm.git"
 DOTFILES_DIR="$HOME/.dotdwm"
@@ -53,5 +59,3 @@ else
   step "Klonowanie repozytorium"
   git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
 fi
-
-info "✓ dotfiles — OK"

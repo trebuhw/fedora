@@ -4,7 +4,7 @@
 # =============================================================================
 set -euo pipefail
 
-sudo dnf groupinstall -y "development-tools"
+sudo dnf install -y @development-tools
 
 sudo dnf install -y \
   gettext \
