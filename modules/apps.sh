@@ -17,6 +17,7 @@ sudo dnf install -y \
   i3lock \
   iwd \
   lm_sensors \
+  meld \
   ncdu \
   neovim \
   network-manager-applet \
