@@ -17,10 +17,10 @@ CYAN='\033[0;36m'
 GRAY='\033[0;90m'
 NC='\033[0m'
 
-info()    { echo -e "${GREEN}[INFO]${NC}  $*" | tee -a "$LOG_FILE"; }
-warn()    { echo -e "${YELLOW}[WARN]${NC}  $*" | tee -a "$LOG_FILE"; }
-error()   { echo -e "${RED}[ERROR]${NC} $*" | tee -a "$LOG_FILE"; }
-dryrun()  { echo -e "${GRAY}[DRY]${NC}   $*" | tee -a "$LOG_FILE"; }
+info() { echo -e "${GREEN}[INFO]${NC}  $*" | tee -a "$LOG_FILE"; }
+warn() { echo -e "${YELLOW}[WARN]${NC}  $*" | tee -a "$LOG_FILE"; }
+error() { echo -e "${RED}[ERROR]${NC} $*" | tee -a "$LOG_FILE"; }
+dryrun() { echo -e "${GRAY}[DRY]${NC}   $*" | tee -a "$LOG_FILE"; }
 section() {
   echo -e "\n${CYAN}══════════════════════════════════════${NC}" | tee -a "$LOG_FILE"
   echo -e "${CYAN}  $*${NC}" | tee -a "$LOG_FILE"
@@ -126,6 +126,7 @@ MODULES=(
   theme
   install-suckless
   cargo-apps
+  virt-manager
   # nvidia
 )
 
