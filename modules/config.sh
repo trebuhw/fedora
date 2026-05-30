@@ -14,7 +14,7 @@ sudo usermod -aG wheel "$USER"
 # Operacje na /etc/sudoers w całości jako root przez heredoc
 # $USER i $CURRENT_USER są rozwijane przez shell usera zanim trafią do sudo
 CURRENT_USER="$USER"
-sudo bash -s << SUDOERS_EOF
+sudo bash -s <<SUDOERS_EOF
   set -e
   sed -i 's/^#[[:space:]]*%wheel[[:space:]]*ALL=(ALL)[[:space:]]*ALL/%wheel  ALL=(ALL)       ALL/' /etc/sudoers
 
@@ -41,17 +41,17 @@ SUDOERS_EOF
 # DNF
 # -----------------------------------------------------------------------------
 echo "Konfiguracja DNF..."
-sudo grep -q "fastestmirror"          /etc/dnf/dnf.conf || echo "fastestmirror=True"        | sudo tee -a /etc/dnf/dnf.conf > /dev/null
-sudo grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf > /dev/null
-sudo grep -q "defaultyes"             /etc/dnf/dnf.conf || echo "defaultyes=True"           | sudo tee -a /etc/dnf/dnf.conf > /dev/null
-sudo grep -q "keepcache"              /etc/dnf/dnf.conf || echo "keepcache=True"            | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo grep -q "fastestmirror" /etc/dnf/dnf.conf || echo "fastestmirror=True" | sudo tee -a /etc/dnf/dnf.conf >/dev/null
+sudo grep -q "max_parallel_downloads" /etc/dnf/dnf.conf || echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf >/dev/null
+sudo grep -q "defaultyes" /etc/dnf/dnf.conf || echo "defaultyes=True" | sudo tee -a /etc/dnf/dnf.conf >/dev/null
+sudo grep -q "keepcache" /etc/dnf/dnf.conf || echo "keepcache=True" | sudo tee -a /etc/dnf/dnf.conf >/dev/null
 
 # -----------------------------------------------------------------------------
 # Hostname
 # -----------------------------------------------------------------------------
 echo "Ustawiam hostname..."
 sudo hostnamectl set-hostname fedora
-sudo grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" | sudo tee -a /etc/hosts > /dev/null
+sudo grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" | sudo tee -a /etc/hosts >/dev/null
 
 # -----------------------------------------------------------------------------
 # Xorg
@@ -59,7 +59,7 @@ sudo grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1   fedora" | sudo tee -a /
 echo "Kopiuję konfigurację Xorg..."
 sudo mkdir -p /etc/X11/xorg.conf.d
 
-sudo tee /etc/X11/xorg.conf.d/00-keyboard.conf > /dev/null << 'XKBD'
+sudo tee /etc/X11/xorg.conf.d/00-keyboard.conf >/dev/null <<'XKBD'
 Section "InputClass"
         Identifier "system-keyboard"
         MatchIsKeyboard "on"
@@ -68,7 +68,7 @@ Section "InputClass"
 EndSection
 XKBD
 
-sudo tee /etc/X11/xorg.conf.d/20-intel.conf > /dev/null << 'XINTEL'
+sudo tee /etc/X11/xorg.conf.d/20-intel.conf >/dev/null <<'XINTEL'
 Section "Device"
     Identifier "Intel Graphics"
     Driver "modesetting"
@@ -76,7 +76,7 @@ Section "Device"
 EndSection
 XINTEL
 
-sudo tee /etc/X11/xorg.conf.d/90-touchpad.conf > /dev/null << 'XTOUCH'
+sudo tee /etc/X11/xorg.conf.d/90-touchpad.conf >/dev/null <<'XTOUCH'
 Section "InputClass"
     Identifier "touchpad"
     MatchIsTouchpad "on"
@@ -93,7 +93,7 @@ XTOUCH
 # -----------------------------------------------------------------------------
 echo "Instaluję dwm.desktop..."
 sudo mkdir -p /usr/share/xsessions
-sudo tee /usr/share/xsessions/dwm.desktop > /dev/null << 'DWMDESKTOP'
+sudo tee /usr/share/xsessions/dwm.desktop >/dev/null <<'DWMDESKTOP'
 [Desktop Entry]
 Encoding=UTF-8
 Name=dwm
@@ -106,7 +106,7 @@ X-LightDM-DesktopName=dwm
 DWMDESKTOP
 
 echo "Instaluję start-dwm.sh..."
-sudo tee /usr/local/bin/start-dwm.sh > /dev/null << 'STARTDWM'
+sudo tee /usr/local/bin/start-dwm.sh >/dev/null <<'STARTDWM'
 #!/bin/sh
 # GDM przy sesjach Xorg nie sourcuje profilu użytkownika automatycznie.
 # Bez tego $PATH jest niekompletny — ghostty, st i inne binarki z
@@ -118,5 +118,23 @@ slstatus &
 exec /usr/local/bin/dwm
 STARTDWM
 sudo chmod +x /usr/local/bin/start-dwm.sh
+
+# -----------------------------------------------------------------------------
+# GTK theme dla roota (symlinki do użytkownika)
+# -----------------------------------------------------------------------------
+echo "Konfiguracja GTK theme dla roota..."
+sudo mkdir -p /root/.config
+
+sudo ln -sf "/home/${USER}/.fonts" /root/.fonts
+sudo ln -sf "/home/${USER}/.icons" /root/.icons
+sudo ln -sf "/home/${USER}/.themes" /root/.themes
+sudo ln -sf "/home/${USER}/.config/fish" /root/.config/fish
+sudo ln -sf "/home/${USER}/.config/gtk-3.0" /root/.config/gtk-3.0
+sudo ln -sf "/home/${USER}/.config/gtk-4.0" /root/.config/gtk-4.0
+sudo ln -sf "/home/${USER}/.config/nvim" /root/.config/nvim
+sudo ln -sf "/home/${USER}/.config/yazi" /root/.config/yazi
+sudo ln -sf "/home/${USER}/.bashrc" /root/.bashrc
+
+echo "GTK theme dla roota — OK"
 
 echo "config.sh — zakończony"
