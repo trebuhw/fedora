@@ -12,6 +12,7 @@ sudo dnf install -y \
   file-roller \
   fish \
   ghostty \
+  gparted \
   gthumb \
   htop \
   i3lock \
