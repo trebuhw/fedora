@@ -115,6 +115,7 @@ sudo tee /usr/local/bin/start-dwm.sh >/dev/null <<'STARTDWM'
 [ -f "$HOME/.profile" ] && . "$HOME/.profile"
 
 slstatus &
+/usr/libexec/xfce-polkit &
 exec /usr/local/bin/dwm
 STARTDWM
 sudo chmod +x /usr/local/bin/start-dwm.sh
