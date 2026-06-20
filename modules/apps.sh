@@ -1,6 +1,7 @@
 #!/bin/bash
 # Programy użytkowe
 sudo dnf install -y \
+  arp-scan \
   bat \
   blueman \
   btop \
