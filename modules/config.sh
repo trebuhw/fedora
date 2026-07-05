@@ -109,16 +109,30 @@ DWMDESKTOP
 echo "Instaluję start-dwm.sh..."
 sudo tee /usr/local/bin/start-dwm.sh >/dev/null <<'STARTDWM'
 #!/bin/sh
-# GDM przy sesjach Xorg nie sourcuje profilu użytkownika automatycznie.
-# Bez tego $PATH jest niekompletny — ghostty, st i inne binarki z
-# ~/.local/bin, ~/.cargo/bin nie są widoczne.
-[ -f /etc/profile ] && . /etc/profile
-[ -f "$HOME/.profile" ] && . "$HOME/.profile"
 
+# GDM przy sesjach Xorg nie sourcuje profilu użytkownika automatycznie.
+# Wczytujemy profile, aby odzyskać pełny $PATH (m.in. ~/.local/bin, ~/.cargo/bin z ~/.bashrc).
+[ -f /etc/profile ] && . /etc/profile
+[ -f "$HOME/.bash_profile" ] && . "$HOME/.bash_profile"
+
+# Ustaw XDG_SESSION_TYPE na x11 (zabezpieczenie dla uruchamiania z konsoli)
+export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:-x11}"
+
+# Wstrzyknięcie środowiska do systemd i DBus (Krytyczne dla Polkit i Wireplumber).
+systemctl --user import-environment DISPLAY XAUTHORITY XDG_SESSION_TYPE PATH
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY XDG_SESSION_TYPE PATH
+
+# Poinformowanie systemd o starcie środowiska graficznego
+systemctl --user start xdg-desktop-autostart.target
+
+# Usługi przypięte bezpośrednio do cyklu życia DWM
 slstatus &
 /usr/libexec/xfce-polkit &
+
+# Start menedżera okien
 exec /usr/local/bin/dwm
 STARTDWM
+
 sudo chmod +x /usr/local/bin/start-dwm.sh
 
 # -----------------------------------------------------------------------------
