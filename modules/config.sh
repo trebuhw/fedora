@@ -110,27 +110,39 @@ echo "Instaluję start-dwm.sh..."
 sudo tee /usr/local/bin/start-dwm.sh >/dev/null <<'STARTDWM'
 #!/bin/sh
 
-# GDM przy sesjach Xorg nie sourcuje profilu użytkownika automatycznie.
-# Wczytujemy profile, aby odzyskać pełny $PATH (m.in. ~/.local/bin, ~/.cargo/bin z ~/.bashrc).
 [ -f /etc/profile ] && . /etc/profile
 [ -f "$HOME/.bash_profile" ] && . "$HOME/.bash_profile"
 
-# Ustaw XDG_SESSION_TYPE na x11 (zabezpieczenie dla uruchamiania z konsoli)
 export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:-x11}"
+export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:-DWM}"
 
-# Wstrzyknięcie środowiska do systemd i DBus (Krytyczne dla Polkit i Wireplumber).
-systemctl --user import-environment DISPLAY XAUTHORITY XDG_SESSION_TYPE PATH
-dbus-update-activation-environment --systemd DISPLAY XAUTHORITY XDG_SESSION_TYPE PATH
+# Odblokuj ręczny start i zablokuj auto-stop graphical-session.target
+DROPIN_DIR="$HOME/.config/systemd/user/graphical-session.target.d"
+DROPIN_FILE="$DROPIN_DIR/override.conf"
+if [ ! -f "$DROPIN_FILE" ]; then
+    mkdir -p "$DROPIN_DIR"
+    cat > "$DROPIN_FILE" <<'EOF'
+[Unit]
+RefuseManualStart=no
+StopWhenUnneeded=no
+EOF
+    systemctl --user daemon-reload
+fi
 
-# Poinformowanie systemd o starcie środowiska graficznego
+systemctl --user import-environment DISPLAY XAUTHORITY XDG_SESSION_TYPE XDG_CURRENT_DESKTOP PATH
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY XDG_SESSION_TYPE XDG_CURRENT_DESKTOP PATH
+dbus-update-activation-environment --systemd --all
+
+systemctl --user start graphical-session.target
 systemctl --user start xdg-desktop-autostart.target
 
-# Usługi przypięte bezpośrednio do cyklu życia DWM
 slstatus &
 /usr/libexec/xfce-polkit &
 
-# Start menedżera okien
+(sleep 1 && systemctl --user restart pipewire wireplumber) &
+
 exec /usr/local/bin/dwm
+
 STARTDWM
 
 sudo chmod +x /usr/local/bin/start-dwm.sh
