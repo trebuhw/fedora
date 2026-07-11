@@ -8,14 +8,17 @@ DOTDIR="$HOME/.dotdwm"
 TARGET="$HOME"
 
 info() { echo "[INFO] $*"; }
-error() { echo "[ERROR] $*"; exit 1; }
+error() {
+  echo "[ERROR] $*"
+  exit 1
+}
 trap 'error "Błąd w linii ${LINENO}"' ERR
 
 # =============================================================================
 # CHECKS
 # =============================================================================
 command -v stow >/dev/null 2>&1 || error "GNU Stow nie jest zainstalowany"
-[[ -d "${DOTDIR}" ]]      || error "Nie istnieje katalog: ${DOTDIR}"
+[[ -d "${DOTDIR}" ]] || error "Nie istnieje katalog: ${DOTDIR}"
 [[ -d "${DOTDIR}/.git" ]] || error "${DOTDIR} nie wygląda jak repo git"
 
 # =============================================================================
@@ -32,6 +35,7 @@ STOW_PACKAGES=(
   "ghostty"
   "icons"
   "nvim"
+  "mc"
   "rofi"
   "starship"
   "suckless"
@@ -69,6 +73,7 @@ rm -rf \
   "${TARGET}/.config/fish" \
   "${TARGET}/.config/ghostty" \
   "${TARGET}/.config/nvim" \
+  "${TARGET}/.config/mc" \
   "${TARGET}/.config/rofi" \
   "${TARGET}/.config/suckless" \
   "${TARGET}/.config/sxiv" \
@@ -76,7 +81,8 @@ rm -rf \
   "${TARGET}/.config/xfce4" \
   "${TARGET}/.config/yazi" \
   "${TARGET}/.config/zathura" \
-  "${TARGET}/.config/starship.toml"
+  "${TARGET}/.config/starship.toml" \
+  "${TARGET}/.local/share/mc"
 
 # =============================================================================
 # STOW — bez sudo, jesteśmy userem, symlinki będą należeć do usera
