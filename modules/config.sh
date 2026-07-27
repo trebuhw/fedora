@@ -68,13 +68,23 @@ Section "InputClass"
 EndSection
 XKBD
 
-sudo tee /etc/X11/xorg.conf.d/20-intel.conf >/dev/null <<'XINTEL'
+# Konfiguracja Intel — tylko jeśli faktycznie wykryto GPU Intela.
+# Zabezpieczenie przed sytuacją, gdyby ten skrypt uruchomiono kiedyś na innym
+# sprzęcie (AMD/Nvidia) — plik z opcją "Intel Graphics" byłby wtedy bez sensu.
+GPU_INFO=$(command -v lspci &>/dev/null && lspci -nn 2>/dev/null | grep -Ei 'vga compatible controller|3d controller' || true)
+
+if echo "$GPU_INFO" | grep -qi intel; then
+  echo "GPU: wykryto Intel — zapisuję 20-intel.conf (TearFree)..."
+  sudo tee /etc/X11/xorg.conf.d/20-intel.conf >/dev/null <<'XINTEL'
 Section "Device"
     Identifier "Intel Graphics"
     Driver "modesetting"
     Option "TearFree" "true"
 EndSection
 XINTEL
+else
+  echo "GPU: nie wykryto Intela (${GPU_INFO:-brak danych z lspci}) — pomijam 20-intel.conf."
+fi
 
 sudo tee /etc/X11/xorg.conf.d/90-touchpad.conf >/dev/null <<'XTOUCH'
 Section "InputClass"
