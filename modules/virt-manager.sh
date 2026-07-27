@@ -1,12 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # Moduł: virt-manager
 # Instalacja i konfiguracja KVM/QEMU/virt-manager na Fedorze 44
-# Uruchamiany przez install.sh — nie uruchamiaj bezpośrednio
+# Można uruchomić przez install.sh ALBO samodzielnie: bash modules/virt-manager.sh
 # =============================================================================
+set -euo pipefail
 
-# Helpery info/warn/error oraz zmienne ACTUAL_USER, LOG_FILE, DRY_RUN
-# są eksportowane przez install.sh
+# Jeśli moduł jest uruchamiany samodzielnie (bez install.sh), funkcje info/warn/error
+# i zmienna ACTUAL_USER nie istnieją — definiujemy fallback.
+if ! declare -f info >/dev/null 2>&1; then
+  GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+  info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
+  warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+  error() { echo -e "${RED}[ERROR]${NC} $*"; }
+fi
+: "${ACTUAL_USER:=$USER}"
 
 # --- Krok 1: Sprawdzenie wsparcia CPU ---
 info "virt-manager: sprawdzanie wsparcia CPU..."

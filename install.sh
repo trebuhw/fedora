@@ -3,6 +3,8 @@
 # Fedora post-install — główny skrypt
 # Uruchom jako zwykły user: bash install.sh
 # Tryb podglądu:             bash install.sh --dry-run
+# Pojedyncze moduły:         bash install.sh <moduł> [<moduł> ...]
+# Lista modułów:             bash install.sh --list
 # =============================================================================
 
 set -euo pipefail
@@ -26,6 +28,9 @@ section() {
   echo -e "${CYAN}  $*${NC}" | tee -a "$LOG_FILE"
   echo -e "${CYAN}══════════════════════════════════════${NC}" | tee -a "$LOG_FILE"
 }
+# Bez tego moduły uruchamiane jako osobny proces (bash "$file") nie widzą
+# tych funkcji — bash nie eksportuje funkcji automatycznie, trzeba explicite.
+export -f info warn error dryrun section
 
 # -----------------------------------------------------------------------------
 # NIE uruchamiaj jako root
@@ -37,17 +42,96 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Tryb dry-run
+# Parsowanie argumentów
+# Przykłady:
+#   bash install.sh                    → uruchamia pełną listę MODULES
+#   bash install.sh apps                → uruchamia tylko modules/apps.sh
+#   bash install.sh apps theme nvidia   → uruchamia tylko wskazane moduły, w podanej kolejności
+#   bash install.sh --dry-run apps      → podgląd tylko wybranego modułu
+#   bash install.sh --list              → wypisuje dostępne moduły i wychodzi
 # -----------------------------------------------------------------------------
 DRY_RUN=false
+LIST_ONLY=false
+CLI_MODULES=()
 for arg in "$@"; do
-  [[ "$arg" == "--dry-run" ]] && DRY_RUN=true
+  case "$arg" in
+    --dry-run) DRY_RUN=true ;;
+    --list) LIST_ONLY=true ;;
+    *) CLI_MODULES+=("$arg") ;;
+  esac
 done
+
+# -----------------------------------------------------------------------------
+# Katalog skryptu (potrzebny zanim cokolwiek innego się wydarzy)
+# -----------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# -----------------------------------------------------------------------------
+# Moduły do uruchomienia (kolejność ma znaczenie)
+# Zakomentuj moduły których nie chcesz uruchamiać na trwałe,
+# albo uruchom pojedyncze/wybrane moduły ad-hoc: bash install.sh <moduł> [...]
+# -----------------------------------------------------------------------------
+MODULES=(
+  repos
+  xorg
+  build
+  config
+  desktop
+  apps
+  dotfiles
+  stow-dotdwm
+  theme
+  install-suckless
+  cargo-apps
+  virt-manager
+  # nvidia
+)
+
+# Moduły krytyczne — błąd = stop całej instalacji
+CRITICAL=(repos build config)
+
+# -----------------------------------------------------------------------------
+# --list: wypisz dostępne moduły i wyjdź (przed sudo, przed logami)
+# -----------------------------------------------------------------------------
+if $LIST_ONLY; then
+  echo "Dostępne moduły (kolejność domyślna):"
+  for mod in "${MODULES[@]}"; do
+    is_critical=false
+    for c in "${CRITICAL[@]}"; do
+      [[ "$mod" == "$c" ]] && is_critical=true && break
+    done
+    if $is_critical; then
+      echo "  - $mod  [krytyczny]"
+    else
+      echo "  - $mod"
+    fi
+  done
+  echo ""
+  echo "Uruchomienie pojedynczego/wybranych modułów:"
+  echo "  bash install.sh <moduł> [<moduł> ...]"
+  echo "  np.: bash install.sh apps theme"
+  exit 0
+fi
+
+# -----------------------------------------------------------------------------
+# Jeśli podano moduły w linii komend — zwaliduj i nadpisz domyślną listę
+# (robimy to PRZED proszeniem o hasło sudo, żeby literówka w nazwie
+# modułu nie kosztowała usera zbędnego wpisywania hasła)
+# -----------------------------------------------------------------------------
+if [[ ${#CLI_MODULES[@]} -gt 0 ]]; then
+  for mod in "${CLI_MODULES[@]}"; do
+    if [[ ! -f "$SCRIPT_DIR/modules/${mod}.sh" ]]; then
+      echo -e "${RED}[ERROR]${NC} Nieznany moduł: '${mod}' (brak pliku modules/${mod}.sh)"
+      echo "Dostępne moduły: bash install.sh --list"
+      exit 1
+    fi
+  done
+  MODULES=("${CLI_MODULES[@]}")
+fi
 
 # -----------------------------------------------------------------------------
 # Katalogi i log
 # -----------------------------------------------------------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$HOME/.local/log/fedora-install"
 LOG_FILE="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S).log"
 mkdir -p "$LOG_DIR"
@@ -109,29 +193,9 @@ fi
 info "Log: $LOG_FILE"
 info "Użytkownik: $ACTUAL_USER"
 info "SCRIPT_DIR: $SCRIPT_DIR"
-
-# -----------------------------------------------------------------------------
-# Moduły do uruchomienia (kolejność ma znaczenie)
-# Zakomentuj moduły których nie chcesz uruchamiać
-# -----------------------------------------------------------------------------
-MODULES=(
-  repos
-  xorg
-  build
-  config
-  desktop
-  apps
-  dotfiles
-  stow-dotdwm
-  theme
-  install-suckless
-  cargo-apps
-  virt-manager
-  # nvidia
-)
-
-# Moduły krytyczne — błąd = stop całej instalacji
-CRITICAL=(repos build config)
+if [[ ${#CLI_MODULES[@]} -gt 0 ]]; then
+  info "Wybrane moduły (z linii komend): ${MODULES[*]}"
+fi
 
 # -----------------------------------------------------------------------------
 # Dry-run: pokaż plan i wyjdź

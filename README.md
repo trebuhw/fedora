@@ -21,10 +21,10 @@ git clone https://github.com/trebuhw/Fedora-Install.git
 cd Fedora-Install
 
 # 2. Podejrzyj plan (nic nie zmienia)
-sudo bash install.sh --dry-run
+bash install.sh --dry-run
 
-# 3. Uruchom instalację
-sudo bash install.sh
+# 3. Uruchom instalację (jako zwykły user — skrypt sam poprosi o sudo)
+bash install.sh
 ```
 
 ---
@@ -87,7 +87,12 @@ Instaluje programy użytkowe:
 `bat`, `btop`, `chromium`, `codium`, `eza`, `fastfetch`, `fish`, `flameshot`,
 `ghostty`, `gparted`, `htop`, `i3lock`, `neovim`, `pamixer`, `papirus-icon-theme`,
 `pavucontrol`, `starship`, `stow`, `Thunar`, `thunderbird`, `trash-cli`,
-`ueberzugpp`, `yazi`, `zathura` i inne
+`ueberzugpp`, `yazi`, `zathura` i inne.
+
+Na końcu uruchamia dodatkowo każdy skrypt z `apps.d/` (programy wymagające
+własnej logiki instalacyjnej, np. `github-desktop.sh` instalujący GitHub Desktop
+z pliku `.rpm`). Błąd w jednym skrypcie z `apps.d/` nie przerywa instalacji
+pozostałych — jest tylko odnotowany w logu.
 
 ### `dotfiles.sh`
 Klonuje repozytorium dotfiles z GitHub:
@@ -148,7 +153,8 @@ sudo bash install.sh --dry-run
 Wyświetla pełny plan instalacji — listę modułów w kolejności wraz z zawartością każdego skryptu. Nic nie wykonuje.
 
 ### Wybiórcze moduły
-Zakomentuj niepotrzebne moduły w `install.sh`:
+
+**Opcja 1 — na trwałe**, zakomentuj niepotrzebne moduły w `install.sh`:
 ```bash
 MODULES=(
     repos
@@ -166,18 +172,40 @@ MODULES=(
 )
 ```
 
+**Opcja 2 — ad-hoc, z linii komend**, bez edytowania pliku:
+```bash
+# uruchom tylko jeden moduł
+bash install.sh apps
+
+# uruchom kilka modułów, w podanej kolejności
+bash install.sh apps theme cargo-apps
+
+# podgląd (dry-run) wybranego modułu
+bash install.sh --dry-run virt-manager
+
+# lista dostępnych modułów
+bash install.sh --list
+```
+Przydatne np. gdy tylko dodałeś nowy program do `apps.sh` i chcesz doinstalować go bez przechodzenia przez cały setup od nowa.
+
+**Opcja 3 — samodzielne uruchomienie pliku modułu** (bez `install.sh`):
+```bash
+bash modules/apps.sh
+```
+Działa dla modułów bez zależności od innych kroków (np. `apps.sh`, `repos.sh`, `nvidia.sh`). Moduły zależne od wcześniejszych etapów (np. `install-suckless.sh` wymaga `stow-dotdwm.sh`, `cargo-apps.sh` wymaga `build.sh`) będą zgłaszać błąd z jasnym komunikatem, jeśli wymagany wcześniejszy krok nie został wykonany.
+
 ---
 
 ## Logowanie
 
 Każde uruchomienie zapisuje pełny log:
 ```
-/var/log/fedora-install/install-YYYYMMDD-HHMMSS.log
+~/.local/log/fedora-install/install-YYYYMMDD-HHMMSS.log
 ```
 
 Przy błędzie:
 ```bash
-cat /var/log/fedora-install/install-*.log | tail -50
+cat ~/.local/log/fedora-install/install-*.log | tail -50
 ```
 
 ---
