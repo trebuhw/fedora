@@ -40,6 +40,7 @@ sudo dnf install -y \
   trash-cli \
   tumbler \
   ueberzugpp \
+  unison \
   wget \
   vim-enhanced \
   xfce-polkit \
