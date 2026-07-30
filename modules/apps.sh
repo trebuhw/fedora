@@ -1,5 +1,8 @@
 #!/bin/bash
 # Programy użytkowe
+#
+# Na Fedora whiptail > newt (uzywane do skrypt backup)
+#
 sudo dnf install -y \
   arp-scan \
   bat \
@@ -23,11 +26,13 @@ sudo dnf install -y \
   ncdu \
   neovim \
   network-manager-applet \
+  newt \
   nwg-look \
   onedrive \
   pamixer \
   pavucontrol \
   scrot \
+  seahorse \
   speedtest-cli \
   starship \
   stow \
