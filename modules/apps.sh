@@ -30,6 +30,7 @@ sudo dnf install -y \
   nwg-look \
   onedrive \
   pamixer \
+  pcmanfm \
   pavucontrol \
   scrot \
   seahorse \
