@@ -30,7 +30,6 @@ sudo dnf install -y \
   nwg-look \
   onedrive \
   pamixer \
-  pcmanfm \
   pavucontrol \
   scrot \
   seahorse \
@@ -45,7 +44,6 @@ sudo dnf install -y \
   tldr \
   trash-cli \
   tumbler \
-  udiskie \
   ueberzugpp \
   unison \
   wget \
