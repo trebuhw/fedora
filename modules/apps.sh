@@ -44,6 +44,7 @@ sudo dnf install -y \
   tldr \
   trash-cli \
   tumbler \
+  udiskie \
   ueberzugpp \
   unison \
   wget \
