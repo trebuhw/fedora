@@ -47,6 +47,7 @@ sudo dnf install -y \
   ueberzugpp \
   unison \
   wget \
+  wmctrl \
   vim-enhanced \
   xfce-polkit \
   yazi \
