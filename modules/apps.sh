@@ -31,6 +31,7 @@ sudo dnf install -y \
   onedrive \
   pamixer \
   pavucontrol \
+  playerctl \
   scrot \
   seahorse \
   speedtest-cli \
