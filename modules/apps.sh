@@ -29,7 +29,6 @@ sudo dnf install -y \
   network-manager-applet \
   newt \
   nwg-look \
-  onedrive \
   pamixer \
   pavucontrol \
   playerctl \
