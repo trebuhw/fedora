@@ -9,6 +9,7 @@ sudo dnf install -y \
   blueman \
   btop \
   chromium \
+  clean-rpm-gpg-pubkey \
   codium \
   curl \
   eza \
