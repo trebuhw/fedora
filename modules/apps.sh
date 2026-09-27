@@ -17,6 +17,7 @@ sudo dnf install -y \
   file-roller \
   fish \
   ghostty \
+  google-chrome-stable \
   gparted \
   gthumb \
   htop \
