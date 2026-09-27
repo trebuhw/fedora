@@ -22,6 +22,7 @@ sudo dnf install -y \
   htop \
   i3lock \
   iwd \
+  kitty \
   lm_sensors \
   meld \
   ncdu \

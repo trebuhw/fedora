@@ -34,6 +34,7 @@ STOW_PACKAGES=(
   "fonts"
   "ghostty"
   "icons"
+  "kitty"
   "nvim"
   "mc"
   "rofi"
