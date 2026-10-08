@@ -34,6 +34,7 @@ sudo dnf install -y \
   pamixer \
   pavucontrol \
   playerctl \
+  ps_mem \
   scrot \
   seahorse \
   speedtest-cli \

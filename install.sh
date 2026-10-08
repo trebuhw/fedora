@@ -83,7 +83,7 @@ MODULES=(
   theme
   install-suckless
   cargo-apps
-  virt-manager
+  # virt-manager
   # nvidia
 )
 
