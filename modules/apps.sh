@@ -54,6 +54,7 @@ sudo dnf install -y \
   wmctrl \
   vim-enhanced \
   xfce-polkit \
+  xwininfo \
   yazi \
   zathura \
   zathura-pdf-poppler \
