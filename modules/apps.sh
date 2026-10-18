@@ -32,6 +32,7 @@ sudo dnf install -y \
   newt \
   nwg-look \
   pamixer \
+  papirus-icon-theme \
   pavucontrol \
   playerctl \
   ps_mem \
